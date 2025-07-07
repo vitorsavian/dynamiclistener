@@ -72,8 +72,8 @@ func NewListenerWithChain(l net.Listener, storage TLSStorage, caCert []*x509.Cer
 			CAKey:               caKey,
 			CN:                  config.CN,
 			Organization:        config.Organization,
-			FilterCN:        allowDefaultSANs(config.SANs, config.FilterCN),
-			FilterExisting: config.FilterExisting,
+			FilterCN:            allowDefaultSANs(config.SANs, config.FilterCN),
+			FilterExisting:      config.FilterExisting,
 			ExpirationDaysCheck: config.ExpirationDaysCheck,
 		},
 		Listener:  l,
@@ -97,12 +97,6 @@ func NewListenerWithChain(l net.Listener, storage TLSStorage, caCert []*x509.Cer
 
 	if setter, ok := storage.(SetFactory); ok {
 		setter.SetFactory(dynamicListener.factory)
-	}
-
-	if config.RegenerateCerts != nil && config.RegenerateCerts() {
-		if err := dynamicListener.RegenerateCerts(); err != nil {
-			return nil, err
-		}
 	}
 
 	tlsListener := tls.NewListener(dynamicListener.WrapExpiration(config.ExpirationDaysCheck), dynamicListener.tlsConfig)
@@ -162,8 +156,7 @@ type Config struct {
 	MaxSANs               int
 	ExpirationDaysCheck   int
 	CloseConnOnCertChange bool
-	RegenerateCerts       func() bool
-	FilterCN func(...string) []string
+	FilterCN              func(...string) []string
 	// FilterExisting controls whether FilterCN is also applied to the set of
 	// CNs already recorded on the secret (via listener.cattle.io/cn-*
 	// annotations) during every cert operation (AddCN, Merge, Renew,
